@@ -15,21 +15,7 @@ $operations = [
 ];
 
 /**
- * Выводит список покупок.
- * Если список пуст — выводит сообщение об этом.
- */
-function printItems(array $items): void
-{
-    if ($items === []) {
-        echo 'Ваш список покупок пуст.' . PHP_EOL;
-        return;
-    }
-
-    echo implode(PHP_EOL, $items) . PHP_EOL;
-}
-
-/**
- * Запрашивает строку у пользователя.
+ * Читает строку из STDIN с выводом приглашения.
  */
 function readLine(string $prompt): string
 {
@@ -44,30 +30,43 @@ function readLine(string $prompt): string
 }
 
 /**
- * Выводит текущий список покупок, меню операций и возвращает выбранный номер операции.
+ * Выводит список покупок.
+ */
+function printItems(array $items): void
+{
+    if (count($items) > 0) {
+        echo 'Ваш список покупок: ' . PHP_EOL;
+        echo implode(PHP_EOL, $items) . PHP_EOL;
+    } else {
+        echo 'Ваш список покупок пуст.' . PHP_EOL;
+    }
+}
+
+/**
+ * Показывает список, меню операций и возвращает корректный номер операции.
  */
 function askOperation(array $items, array $operations): int
 {
     do {
-        // Очистка экрана (*nix). Для Windows можно использовать 'cls'
         system('clear');
-        // system('cls');
-
-        if ($items !== []) {
-            echo 'Ваш список покупок:' . PHP_EOL;
-        }
+        // system('cls'); // для Windows
 
         printItems($items);
 
-        echo 'Выберите операцию для выполнения:' . PHP_EOL;
+        echo 'Выберите операцию для выполнения: ' . PHP_EOL;
+        // (если хочешь, можешь здесь дополнительно убрать пункт удаления,
+        // когда список пуст — сейчас оставлено как в исходном варианте)
         echo implode(PHP_EOL, $operations) . PHP_EOL;
 
         $operationInput = readLine('> ');
         $operationNumber = (int) $operationInput;
 
         if (!array_key_exists($operationNumber, $operations)) {
+            system('clear');
+            // system('cls');
+
             echo '!!! Неизвестный номер операции, повторите попытку.' . PHP_EOL;
-            echo 'Нажмите Enter для продолжения';
+            echo 'Нажмите enter для продолжения';
             fgets(STDIN);
         }
     } while (!array_key_exists($operationNumber, $operations));
@@ -76,15 +75,14 @@ function askOperation(array $items, array $operations): int
 }
 
 /**
- * Добавляет товар в список покупок.
+ * Реализация операции добавления товара.
  */
 function addItem(array &$items): void
 {
-    $itemName = readLine('Введите название товара для добавления в список:' . PHP_EOL . '> ');
-
+    $itemName = readLine("Введение название товара для добавления в список:\n> ");
     if ($itemName === '') {
         echo 'Пустое название товара не будет добавлено.' . PHP_EOL;
-        echo 'Нажмите Enter для продолжения';
+        echo 'Нажмите enter для продолжения';
         fgets(STDIN);
         return;
     }
@@ -93,52 +91,49 @@ function addItem(array &$items): void
 }
 
 /**
- * Удаляет товар из списка покупок.
+ * Реализация операции удаления товара.
  */
 function deleteItem(array &$items): void
 {
-    if ($items === []) {
+    if (count($items) === 0) {
         echo 'Список покупок пуст, удалять нечего.' . PHP_EOL;
-        echo 'Нажмите Enter для продолжения';
+        echo 'Нажмите enter для продолжения';
         fgets(STDIN);
         return;
     }
 
     echo 'Текущий список покупок:' . PHP_EOL;
-    printItems($items);
+    echo 'Список покупок: ' . PHP_EOL;
+    echo implode(PHP_EOL, $items) . PHP_EOL;
 
-    $itemName = readLine('Введите название товара для удаления из списка:' . PHP_EOL . '> ');
+    $itemName = readLine('Введение название товара для удаления из списка:' . PHP_EOL . '> ');
 
-    if (!in_array($itemName, $items, true)) {
-        echo 'Товар с таким названием не найден в списке.' . PHP_EOL;
-        echo 'Нажмите Enter для продолжения';
-        fgets(STDIN);
-        return;
+    if (in_array($itemName, $items, true) !== false) {
+        while (($key = array_search($itemName, $items, true)) !== false) {
+            unset($items[$key]);
+        }
+        echo 'Товар удалён.' . PHP_EOL;
+    } else {
+        echo 'Товар с таким названием не найден.' . PHP_EOL;
     }
 
-    while (($key = array_search($itemName, $items, true)) !== false) {
-        unset($items[$key]);
-    }
-
-    echo 'Товар удалён.' . PHP_EOL;
-    echo 'Нажмите Enter для продолжения';
+    echo 'Нажмите enter для продолжения';
     fgets(STDIN);
 }
 
 /**
- * Выводит список покупок с количеством и ждёт нажатия Enter.
+ * Реализация операции печати списка с подсчётом позиций и паузой.
  */
 function printItemsWithSummary(array $items): void
 {
-    echo 'Ваш список покупок:' . PHP_EOL;
-    printItems($items);
-
-    echo 'Всего ' . count($items) . ' позиций.' . PHP_EOL;
-    echo 'Нажмите Enter для продолжения';
+    echo 'Ваш список покупок: ' . PHP_EOL;
+    echo implode(PHP_EOL, $items) . PHP_EOL;
+    echo 'Всего ' . count($items) . ' позиций. ' . PHP_EOL;
+    echo 'Нажмите enter для продолжения';
     fgets(STDIN);
 }
 
-// ---- Основной код ----
+// ---------------- ОСНОВНОЙ КОД ----------------
 
 $items = [];
 
@@ -161,7 +156,7 @@ do {
             break;
     }
 
-    echo PHP_EOL . '-----' . PHP_EOL;
+    echo PHP_EOL . ' ----- ' . PHP_EOL;
 } while ($operationNumber > OPERATION_EXIT);
 
 echo 'Программа завершена' . PHP_EOL;
